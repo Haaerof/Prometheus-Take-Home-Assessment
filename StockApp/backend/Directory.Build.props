@@ -18,9 +18,6 @@
     -->
     <LangVersion>12.0</LangVersion>
 
-    <!-- Allows the built app to run on a newer installed runtime when 8 is not present. -->
-    <RollForward>LatestMajor</RollForward>
-
     <!-- Treat a possible null reference as a compile error rather than a runtime surprise. -->
     <Nullable>enable</Nullable>
 
