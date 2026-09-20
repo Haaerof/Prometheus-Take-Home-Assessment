@@ -9,6 +9,14 @@
     <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
   </ItemGroup>
 
+  <!--
+    The adapter's types are internal so the vendor's shape cannot leak. The test assembly is
+    granted access so those types can be tested directly rather than only through the web layer.
+  -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="StockApp.Infrastructure.Tests" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\StockApp.Core\StockApp.Core.csproj" />
   </ItemGroup>
