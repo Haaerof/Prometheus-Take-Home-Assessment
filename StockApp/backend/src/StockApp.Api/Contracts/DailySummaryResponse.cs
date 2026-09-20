@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using StockApp.Api.Serialization;
 using StockApp.Core.MarketData.Models;
 
 namespace StockApp.Api.Contracts;
@@ -14,15 +13,13 @@ namespace StockApp.Api.Contracts;
 /// <remarks>
 /// Kept separate from <see cref="DailySummary"/> on purpose. The domain model is free to change
 /// shape as the application grows; this type is a promise to callers and changes only deliberately.
+/// Prices are written at the configured precision by
+/// <see cref="Serialization.PriceJsonConverter"/> rather than being reduced here.
 /// </remarks>
 public sealed record DailySummaryResponse(
     [property: JsonPropertyName("day")] DateOnly Day,
-    [property: JsonPropertyName("lowAverage")]
-    [property: JsonConverter(typeof(FourDecimalPlacesConverter))]
-    decimal LowAverage,
-    [property: JsonPropertyName("highAverage")]
-    [property: JsonConverter(typeof(FourDecimalPlacesConverter))]
-    decimal HighAverage,
+    [property: JsonPropertyName("lowAverage")] decimal LowAverage,
+    [property: JsonPropertyName("highAverage")] decimal HighAverage,
     [property: JsonPropertyName("volume")] long Volume)
 {
     /// <summary>Projects a domain summary onto the published contract.</summary>

@@ -1,4 +1,5 @@
 using StockApp.Api.ErrorHandling;
+using StockApp.Api.Serialization;
 using StockApp.Infrastructure.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -6,6 +7,16 @@ var builder = WebApplication.CreateBuilder(args);
 // Service registration. Spring discovers beans by scanning; here every dependency is declared,
 // so the full object graph of the application is visible in this one file.
 builder.Services.AddControllers();
+
+// How published prices are reduced: four decimal places rounded away from zero unless configured
+// otherwise. Validated at startup so a bad setting fails the process rather than the first request.
+builder.Services
+    .AddOptions<PricePrecisionOptions>()
+    .Bind(builder.Configuration.GetSection(PricePrecisionOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+builder.Services.ConfigureOptions<ConfigurePriceSerialization>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
