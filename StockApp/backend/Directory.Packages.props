@@ -1,0 +1,37 @@
+<Project>
+
+  <!--
+    Central Package Management: every NuGet version for the solution is declared once, here.
+    Individual projects reference a package by name only, so two projects can never drift
+    onto different versions of the same dependency.
+
+    Framework-aligned packages are pinned to their 8.x lines to match the target framework.
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup Label="Infrastructure">
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="8.10.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Web">
+    <!-- .NET 8 has no built-in OpenAPI document generator; that arrived in .NET 9. -->
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="8.1.4" />
+  </ItemGroup>
+
+  <ItemGroup Label="Testing">
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.31" />
+    <!--
+      xUnit v3 runs under Microsoft Testing Platform on the .NET 10 SDK and under VSTest on
+      older ones. Both entry points are referenced so "dotnet test" works on either.
+    -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="xunit.v3" Version="4.0.1" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+
+</Project>

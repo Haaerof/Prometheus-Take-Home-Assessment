@@ -1,0 +1,38 @@
+<Project>
+
+  <!--
+    Settings inherited by every project under backend/.
+    MSBuild walks up the directory tree and imports the first Directory.Build.props it finds,
+    so each .csproj only needs the settings unique to it.
+  -->
+  <PropertyGroup>
+    <!--
+      Targets .NET 8 (LTS) so the solution builds on any SDK from 8 upwards, rather than
+      requiring a reviewer to install the newest one.
+    -->
+    <TargetFramework>net8.0</TargetFramework>
+
+    <!--
+      Pinned to the language version .NET 8 ships with. Left at "latest" a newer SDK would happily
+      compile C# 13 or 14 syntax that an SDK 8 machine then cannot build.
+    -->
+    <LangVersion>12.0</LangVersion>
+
+    <!-- Allows the built app to run on a newer installed runtime when 8 is not present. -->
+    <RollForward>LatestMajor</RollForward>
+
+    <!-- Treat a possible null reference as a compile error rather than a runtime surprise. -->
+    <Nullable>enable</Nullable>
+
+    <!-- Common namespaces (System, System.Linq, ...) are in scope without a using directive. -->
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- A warning left unfixed becomes a warning ignored, so fail the build instead. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!-- Pinned so the same rules apply whichever SDK version a reviewer builds with. -->
+    <AnalysisLevel>8.0-recommended</AnalysisLevel>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Domain layer: models, business rules, and the interfaces they depend on.
+    Deliberately references nothing. If this project ever needs a NuGet package
+    for HTTP, JSON or a database, that is a sign the logic belongs elsewhere.
+  -->
+
+</Project>
