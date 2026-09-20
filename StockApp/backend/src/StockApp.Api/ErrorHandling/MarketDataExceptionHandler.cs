@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using StockApp.Api.Contracts;
 using StockApp.Core.MarketData.Exceptions;
 
 namespace StockApp.Api.ErrorHandling;
@@ -32,7 +33,7 @@ internal sealed partial class MarketDataExceptionHandler(
             return false;
         }
 
-        var (statusCode, title) = Describe(marketDataException);
+        var (statusCode, title, errorCode) = Describe(marketDataException);
 
         if (statusCode >= StatusCodes.Status500InternalServerError)
         {
@@ -59,17 +60,35 @@ internal sealed partial class MarketDataExceptionHandler(
             {
                 Status = statusCode,
                 Title = title,
-                Detail = Detail(marketDataException)
+                Detail = Detail(marketDataException),
+
+                // A machine-readable code, so a client branches on an identifier rather than on
+                // prose that may be reworded. See ApiErrorCode.
+                Extensions = { ["errorCode"] = errorCode }
             }
         }).ConfigureAwait(false);
     }
 
-    private static (int StatusCode, string Title) Describe(MarketDataException exception) => exception switch
-    {
-        SymbolNotFoundException => (StatusCodes.Status404NotFound, "Symbol not found"),
-        UpstreamRateLimitedException => (StatusCodes.Status503ServiceUnavailable, "Market data source is busy"),
-        _ => (StatusCodes.Status502BadGateway, "Market data source unavailable")
-    };
+    /// <summary>
+    /// Maps each failure to the status, title and stable code a caller sees.
+    /// </summary>
+    /// <remarks>
+    /// An upstream contract violation is kept distinct from a transport failure even though both are
+    /// 502s: one means the data source has changed shape and needs our attention, the other means it
+    /// was briefly unreachable and a retry may succeed. Clients act on those differently.
+    /// </remarks>
+    private static (int StatusCode, string Title, string ErrorCode) Describe(MarketDataException exception) =>
+        exception switch
+        {
+            SymbolNotFoundException => (
+                StatusCodes.Status404NotFound, "Symbol not found", ApiErrorCode.SymbolNotFound),
+            UpstreamRateLimitedException => (
+                StatusCodes.Status503ServiceUnavailable, "Market data source is busy", ApiErrorCode.UpstreamRateLimited),
+            UpstreamContractException => (
+                StatusCodes.Status502BadGateway, "Market data source changed unexpectedly", ApiErrorCode.UpstreamContract),
+            _ => (
+                StatusCodes.Status502BadGateway, "Market data source unavailable", ApiErrorCode.UpstreamUnavailable)
+        };
 
     /// <summary>
     /// Chooses what to tell the caller. The upstream's own wording is passed on where it is useful
@@ -81,6 +100,8 @@ internal sealed partial class MarketDataExceptionHandler(
             notFound.UpstreamDescription ?? notFound.Message,
         UpstreamRateLimitedException =>
             "The market data source is rate limiting requests. Please retry shortly.",
+        UpstreamContractException =>
+            "The market data source returned data this application could not interpret.",
         _ =>
             "The market data source could not be reached. Please try again later."
     };

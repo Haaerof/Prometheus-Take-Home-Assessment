@@ -10,7 +10,6 @@ namespace StockApp.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/v1/stocks")]
-[Produces("application/json")]
 public sealed class StocksController(IDailySummaryService dailySummaryService) : ControllerBase
 {
     /// <summary>
@@ -24,6 +23,8 @@ public sealed class StocksController(IDailySummaryService dailySummaryService) :
     /// <response code="404">The market data source does not recognise the symbol.</response>
     /// <response code="502">The market data source failed or replied unexpectedly.</response>
     /// <response code="503">The market data source is rate limiting requests.</response>
+    // Deliberately no [Produces]: it overrides a result's own content type, which would relabel
+    // problem documents as application/json. The response types below describe both outcomes.
     [HttpGet("{symbol}/daily")]
     [ProducesResponseType<IReadOnlyList<DailySummaryResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -36,10 +37,23 @@ public sealed class StocksController(IDailySummaryService dailySummaryService) :
     {
         if (!Symbol.TryCreate(symbol, out var parsedSymbol))
         {
-            return Problem(
+            // Built through the factory so this response carries the same type and traceId members
+            // as the ones the exception handler writes, and the same machine-readable error code.
+            var problem = ProblemDetailsFactory.CreateProblemDetails(
+                HttpContext,
+                statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid symbol",
-                detail: $"'{symbol}' is not a valid stock symbol.",
-                statusCode: StatusCodes.Status400BadRequest);
+                detail: $"'{symbol}' is not a valid stock symbol.");
+
+            problem.Extensions["errorCode"] = ApiErrorCode.InvalidSymbol;
+
+            // BadRequest(problem) would serialise it as application/json. Problem documents have
+            // their own media type, and clients are entitled to rely on it.
+            return new ObjectResult(problem)
+            {
+                StatusCode = StatusCodes.Status400BadRequest,
+                ContentTypes = { "application/problem+json" }
+            };
         }
 
         var report = await dailySummaryService
