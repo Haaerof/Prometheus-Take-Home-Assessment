@@ -57,7 +57,7 @@ cd StockApp/backend
 dotnet test
 ```
 
-116 tests across three projects: the domain logic, the Yahoo adapter, and the HTTP contract.
+123 tests across three projects: the domain logic, the Yahoo adapter, and the HTTP contract.
 
 ## Project layout
 
