@@ -58,8 +58,11 @@ internal sealed class YahooFinanceIntradayProvider(
                     .ReadFromJsonAsync<YahooChartResponse>(SerializerOptions, cancellationToken)
                     .ConfigureAwait(false);
             }
-            catch (JsonException exception)
+            catch (Exception exception) when (exception is JsonException or NotSupportedException)
             {
+                // JsonException covers a body that is not the JSON we expect; NotSupportedException
+                // covers one we cannot even decode, such as an unreadable character set. Both mean
+                // the source is no longer speaking the contract we were built against.
                 throw new UpstreamContractException(
                     $"The market data source returned a response for '{query.Symbol}' that could not be parsed.",
                     exception);
@@ -130,9 +133,9 @@ internal sealed class YahooFinanceIntradayProvider(
 
             return payload?.Chart?.Error?.Description;
         }
-        catch (JsonException)
+        catch (Exception exception) when (exception is JsonException or NotSupportedException)
         {
-            // An unparseable error body is not worth failing over; the status code already told us enough.
+            // An unreadable error body is not worth failing over; the status code already told us enough.
             return null;
         }
     }
