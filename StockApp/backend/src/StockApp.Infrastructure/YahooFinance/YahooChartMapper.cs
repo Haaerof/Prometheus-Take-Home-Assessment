@@ -35,7 +35,7 @@ internal static partial class YahooChartMapper
         var timeZone = ResolveTimeZone(result.Meta?.ExchangeTimezoneName, symbol, logger);
         var bars = ReadBars(result.Timestamp, quotes[0], symbol, logger);
 
-        return new IntradaySeries(symbol, timeZone, bars);
+        return new IntradaySeries(symbol, timeZone, bars, result.Meta?.FullExchangeName);
     }
 
     /// <summary>

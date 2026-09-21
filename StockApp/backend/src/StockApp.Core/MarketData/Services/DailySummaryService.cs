@@ -23,6 +23,7 @@ public sealed class DailySummaryService(
 
         return new DailySummaryReport(
             series.ExchangeTimeZone,
-            calculator.Summarise(series));
+            calculator.Summarise(series),
+            series.ExchangeName);
     }
 }

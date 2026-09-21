@@ -252,6 +252,27 @@ public class YahooChartMapperTests
     /// whose sessions open at 22:00 UTC the previous day. Guards the mapper against a live payload
     /// without requiring the network.
     /// </summary>
+    /// <summary>
+    /// The exchange's display name is presentation detail, so it is carried through untouched when
+    /// present and simply absent when not — never a reason to reject an otherwise usable payload.
+    /// </summary>
+    [Fact]
+    public void TheExchangeName_IsCarriedThroughWhenReported()
+    {
+        var payload = Payload(new YahooChartResult(
+            Meta("America/New_York", "NasdaqGS"), [1L], new YahooIndicators([Quote()])));
+
+        Assert.Equal("NasdaqGS", Map(payload).ExchangeName);
+    }
+
+    [Fact]
+    public void AMissingExchangeName_IsNotAnError()
+    {
+        var payload = Payload(timestamps: [1L], quote: Quote());
+
+        Assert.Null(Map(payload).ExchangeName);
+    }
+
     [Fact]
     public void ARealPayload_MapsToCompleteBarsOnly()
     {
@@ -263,6 +284,7 @@ public class YahooChartMapperTests
 
         Assert.Equal(112, series.Bars.Count);
         Assert.Equal("Pacific/Auckland", series.ExchangeTimeZone.ReportedId);
+        Assert.Equal("NZSE", series.ExchangeName);
         Assert.False(series.ExchangeTimeZone.IsFallback);
         Assert.All(series.Bars, bar => Assert.True(bar.High >= bar.Low));
     }
@@ -274,7 +296,8 @@ public class YahooChartMapperTests
 
     private static YahooQuote Quote() => new([10m], [15m], [100L]);
 
-    private static YahooMeta Meta(string? timeZoneId) => new("TSLA", timeZoneId);
+    private static YahooMeta Meta(string? timeZoneId, string? exchangeName = null) =>
+        new("TSLA", timeZoneId, exchangeName);
 
     private static YahooChartResponse Payload(YahooChartResult result) =>
         new(new YahooChart([result], null));
