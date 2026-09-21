@@ -27,6 +27,8 @@ each day's average low, average high and total volume. The frontend lets you sea
 
 Verified on the .NET 8.0.425 and 10.0.401 SDKs.
 
+Note: Running the tests requires the .NET 8 runtime, included with the .NET 8 SDK.
+
 ## Running it locally
 
 Two terminals, from the repository root.
