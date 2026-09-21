@@ -15,6 +15,9 @@ namespace StockApp.Infrastructure.YahooFinance;
 /// </remarks>
 internal static partial class YahooChartMapper
 {
+    /// <summary>Longest exchange name accepted; real ones are a few characters.</summary>
+    private const int MaxExchangeNameLength = 100;
+
     /// <summary>Converts <paramref name="response"/> into a series for <paramref name="symbol"/>.</summary>
     /// <exception cref="SymbolNotFoundException">The payload carries no result for the symbol.</exception>
     /// <exception cref="UpstreamContractException">The payload is missing structure we require.</exception>
@@ -35,7 +38,28 @@ internal static partial class YahooChartMapper
         var timeZone = ResolveTimeZone(result.Meta?.ExchangeTimezoneName, symbol, logger);
         var bars = ReadBars(result.Timestamp, quotes[0], symbol, logger);
 
-        return new IntradaySeries(symbol, timeZone, bars, result.Meta?.FullExchangeName);
+        return new IntradaySeries(symbol, timeZone, bars, CleanExchangeName(result.Meta?.FullExchangeName));
+    }
+
+    /// <summary>
+    /// Accepts the reported exchange name only if it is plain, printable text.
+    /// </summary>
+    /// <remarks>
+    /// This value is published in a response header, and a header cannot contain control characters:
+    /// a name arriving with a carriage return would otherwise fail the whole request when the
+    /// response is written. It is upstream data, so it is treated as untrusted and dropped when it
+    /// is not usable, rather than being repaired into something the source never said.
+    /// </remarks>
+    private static string? CleanExchangeName(string? reported)
+    {
+        var trimmed = reported?.Trim();
+
+        if (string.IsNullOrEmpty(trimmed) || trimmed.Length > MaxExchangeNameLength)
+        {
+            return null;
+        }
+
+        return trimmed.Any(char.IsControl) ? null : trimmed;
     }
 
     /// <summary>

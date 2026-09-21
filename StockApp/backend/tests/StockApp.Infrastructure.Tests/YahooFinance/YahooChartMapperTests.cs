@@ -265,6 +265,40 @@ public class YahooChartMapperTests
         Assert.Equal("NasdaqGS", Map(payload).ExchangeName);
     }
 
+    /// <summary>
+    /// The exchange name is published in a response header, and upstream text is not trusted to be
+    /// header-safe. A name carrying control characters is dropped rather than failing the request.
+    /// </summary>
+    [Theory]
+    [InlineData("Evil\r\nX-Injected: yes")]
+    [InlineData("Nasdaq\tGS")]
+    [InlineData("Nasdaq\u0000GS")]
+    public void AnUnprintableExchangeName_IsDiscarded(string reported)
+    {
+        var payload = Payload(new YahooChartResult(
+            Meta("America/New_York", reported), [1L], new YahooIndicators([Quote()])));
+
+        Assert.Null(Map(payload).ExchangeName);
+    }
+
+    [Fact]
+    public void AnAbsurdlyLongExchangeName_IsDiscarded()
+    {
+        var payload = Payload(new YahooChartResult(
+            Meta("America/New_York", new string('x', 101)), [1L], new YahooIndicators([Quote()])));
+
+        Assert.Null(Map(payload).ExchangeName);
+    }
+
+    [Fact]
+    public void ASurroundedExchangeName_IsTrimmed()
+    {
+        var payload = Payload(new YahooChartResult(
+            Meta("America/New_York", "  NasdaqGS \r\n"), [1L], new YahooIndicators([Quote()])));
+
+        Assert.Equal("NasdaqGS", Map(payload).ExchangeName);
+    }
+
     [Fact]
     public void AMissingExchangeName_IsNotAnError()
     {
