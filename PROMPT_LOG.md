@@ -38,9 +38,9 @@ Will be accepting .NET 10 for longevity.
 
 Rejected both NSubstitute and Moq in favour of hand-written fakes (entry 6). Based on my own experience: fewer dependencies, more readable, and less time spent learning a new API in a tight project window.
 
-Took the xUnit v3 advice (4.0.1) and used plain `Assert` throughout rather than adding an assertion library.
+Accepted: xUnit v3 (4.0.1), plain `Assert`.
 
-TODO: decide on Vitest + React Testing Library for the frontend.
+Rejected: FluentAssertions, Vitest, React Testing Library.
 
 ---
 
@@ -119,7 +119,9 @@ We came to a general mental model and structure for the assessment. I believe it
 
 Hand-written fakes over NSubstitute.
 
-TODO: the rest — in particular the reading of "this format and precision" as requiring trailing zeros, which is why the decimal converter exists.
+Accepted: the layer map, the provider port, the four-layer null policy.
+
+Changed: read "this format and precision" as requiring trailing zeros.
 
 
 ## 4. Repository layout, and the backend skeleton
@@ -174,7 +176,9 @@ I reexamined the requirements. My initial assumption was that .NET 8+ allowed fo
 
 **What I kept, changed, or rejected**
 
-TODO
+Accepted: the .NET 8 target, the pinned language version and analysis level, Swashbuckle in place of the .NET 9+ OpenAPI package.
+
+Changed: `.slnx` converted to `.sln` after SDK 8 failed to read it.
 
 ---
 
@@ -198,7 +202,9 @@ Improve human readability.
 
 **What I kept, changed, or rejected**
 
-TODO
+Accepted: folder-based packages, the `IDE0130` rule enforcing namespace and folder alignment.
+
+Rejected: keeping the exception family and the Yahoo contracts grouped. One type per file applied uniformly.
 
 ---
 
@@ -226,7 +232,11 @@ Return AI-Agent back to project scope. Generate progress reports to aid in pacin
 
 **What I kept, changed, or rejected**
 
-TODO
+Rejected: caching, containerisation, CI, frontend polish — roughly four hours of proposed work.
+
+Accepted: the layer split, the provider port, the interval and lookback enumerations.
+
+Changed: committing moved to me.
 
 ---
 
@@ -260,7 +270,9 @@ Hedging against poorly generated tests, from experience with AI-driven tests and
 
 **What I kept, changed, or rejected**
 
-TODO
+Accepted: Five error codes, fixes the tests exposed.
+
+Rejected: nothing from the output; two defects in the tests themselves were corrected rather than accepted.
 
 ---
 
@@ -288,9 +300,132 @@ Researching best practices to ensure the delivered product is satisfactory.
 
 **What I kept, changed, or rejected**
 
-TODO
+Rejected: truncation as the default, which was my starting position.
+
+Accepted: rounding away from zero as the default, truncation as a selectable strategy, precision as validated configuration.
+
+Abandoned: deriving the convention from the brief's sample, once it proved not to be real data.
 
 ---
+## 10. Building the frontend to the wireframes
+
+**Prompts**
+
+> Generate and design the frontend according to the wireframes provided under technical-documents.
+>
+> Before search, table headers should be visible.
+>
+> Export should export the table in a JSON file following the format provided in the assessment.
+>
+> Table sortable from day, low avg, high avg, volume
+>
+> Strip text before search
+
+**What the AI produced**
+
+Reading the three wireframes surfaced four requirements the API could not yet serve, so the backend
+was extended first: an `X-Exchange-Name` header for the `{SYMBOL} · {FULLEXCHANGENAME}` line, and a
+`?rounding=` query parameter with a new `INVALID_ROUNDING` code, because the toggle in the wireframe
+puts the choice in front of the user and a rounded figure cannot be un-rounded in the browser.
+
+The React app followed: a typed API client that reads the problem document and the context headers,
+the control row, the results table, the amber fallback banner and the red no-data panel. Later
+prompts made the table headings visible before any search, replaced the CSV export with JSON in the
+brief's own format, made all four columns sortable, and removed the literal placeholder text the
+wireframe used as notation.
+
+**Two bugs found while wiring it up:**
+
+1. **`X-Exchange-Name` was invisible to the browser.** The server sent it, but a browser hides every
+   custom header from JavaScript unless it is named in `Access-Control-Expose-Headers`, and only the
+   two time-zone headers were listed. The exchange name would have silently never appeared, with
+   nothing wrong server-side to find. A test now covers all three headers.
+2. **`Enum.TryParse("3")` accepted numbers.** The rounding parameter would have honoured
+   `?rounding=3` as whichever strategy holds that value, despite a comment claiming otherwise. It is
+   now matched against the known names.
+
+Two details carried over from earlier decisions: the sort order lives in the page rather than the
+table, so an export always matches what is on screen; and the JSON export is built as text rather
+than with `JSON.stringify`, which would drop the trailing zeros that are part of the precision.
+
+**Why I sent these prompts**
+
+Generate a Frontend based on wireframe design.
+
+**What I kept, changed, or rejected**
+
+Accepted: the wireframe-driven build, the `X-Exchange-Name` header, the `?rounding=` parameter, both bug fixes.
+
+Changed: table headings visible before a search, JSON export in place of CSV, all four columns sortable, placeholder notation no longer rendered.
+
+---
+
+## 11. Documentation
+
+**Prompts**
+
+> Draft readme summary of the app and how to locally run the app.
+>
+> provide instruction on how to run tests as well
+>
+> Update prompt log with appropriately for what actually needs to be documented. Fill in what I kept, changed or rejected. Add my manual changes made outside of AI.
+
+**What the AI produced**
+
+A README covering the summary, prerequisites, run instructions for both halves, test instructions,
+the project layout, the API contract including headers and error codes, configuration, design notes
+and extension points. Every command was executed before being documented, including the test filter
+syntax, where the Microsoft Testing Platform form failed and only the working form was written down.
+
+**Why I sent these prompts**
+
+I wanted to add an unbiased recollection of AI usage by having the AI fill in documented changes. Used AI to draft the initial README for me to look over.
+
+**What I kept, changed, or rejected**
+
+Accepted: the structure and the run instructions.
+
+Changed: edited README by hand
+
+---
+
 ## Manual changes made outside of AI
 
-TODO — describe any edits made by hand, and why.
+**The user interface was designed by me, not by the AI.** The three wireframes in
+`StockApp/Technical-Documents/` — the success state, the UTC-fallback warning and the no-data state —
+are my own work, produced before any frontend code existed, and the React app was built to match
+them. Several parts of the system exist only because that design called for them: the rounding
+toggle, which forced a per-request `rounding` parameter on the API; the `{SYMBOL} · {FULLEXCHANGENAME}`
+line, which forced an `X-Exchange-Name` header; and the export control. The AI implemented the
+design; it did not originate it.
+
+**Architecture and scope decisions are mine.** Controllers over minimal APIs, the Api / Core /
+Infrastructure split, one type per file, hand-written fakes over a mocking library, and the MVP
+boundary that removed roughly four hours of proposed work the brief never asked for. Where the AI
+recommended otherwise — minimal APIs, keeping cohesive type families in one file, a longer build —
+I overrode it.
+
+**Toolchain installed by hand.** The .NET 8 and .NET 10 SDKs and the Node toolchain were installed by
+me rather than by the agent, and the Vite scaffold (`npm create vite@latest`) and `npm install` were
+run by me. Agent-driven downloads have been linked to malicious packages; the risk was low here, but
+the habit is worth keeping. That decision paid for itself: installing the .NET 8 SDK myself is what
+exposed the `.slnx` incompatibility in entry 5.
+
+**The requirement was re-read, and the project rolled back because of it.** I first took ".NET 8+" to
+license the newest runtime and chose .NET 10. On reflection I read it as *compatibility* with 8 and
+above, which is the more inclusive reading, and reverted the target framework — see commit
+`[Rollback] .Net 8 rather than .Net 10 for compatibility rather than pure futurability`.
+
+**Review directed the testing.** I asked for comprehensive tests specifically because AI-generated
+tests have shortfalls in my experience, and asked for a written brief on each one. That review
+surfaced defects in the tests themselves, and the resulting suites exposed three genuine bugs in the
+implementation.
+
+**Commit history.** All 25 commits are mine, in a `[Category] Summary` style — `[Implementation]`,
+`[Test]`, `[Deliverable]`, `[Rollback]`, `[Setup]`, `[Technical]`, `[README]`. The agent was asked to
+stop committing partway through so that the history, which is a graded deliverable, is my own work.
+
+**README edited by hand** (commit `b9e7b9f`, 107 lines changed). The drafted README was longer than
+the project warrants, so I renamed the project, reworded the summary, cut the expanded test
+instructions back to a single command, removed the configuration table, design notes and extension
+points, and documented only the two rounding values the interface actually offers
