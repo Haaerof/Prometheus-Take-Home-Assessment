@@ -34,7 +34,9 @@ builder.Services.AddCors(options => options.AddPolicy(FrontendCorsPolicy, policy
     .WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [])
     .WithHeaders("Content-Type")
     .WithMethods("GET")
-    .WithExposedHeaders("X-Grouping-Timezone", "X-Grouping-Timezone-Fallback")));
+    // Custom response headers are invisible to browser JavaScript unless they are exposed here,
+    // however faithfully the server sends them.
+    .WithExposedHeaders("X-Grouping-Timezone", "X-Grouping-Timezone-Fallback", "X-Exchange-Name")));
 
 var app = builder.Build();
 
