@@ -1,0 +1,7 @@
+# Settings for test projects only. EditorConfig applies the nearest file, so these
+# relax rules that make sense for shipped code but not for test method names.
+
+[*.cs]
+# CA1707: "remove underscores from member names". Underscores are how test names stay
+# readable as sentences (Method_Scenario_ExpectedResult), which is worth more here.
+dotnet_diagnostic.CA1707.severity = none

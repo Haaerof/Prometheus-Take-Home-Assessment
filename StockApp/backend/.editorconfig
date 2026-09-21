@@ -1,0 +1,14 @@
+# Conventions for the backend solution. EditorConfig applies the nearest matching file,
+# so tests/.editorconfig relaxes a rule that does not suit test code.
+
+root = true
+
+[*.cs]
+# IDE0130: a file's namespace must match its folder path. This is what keeps folders meaningful
+# as the package structure rather than as arbitrary grouping, since C# — unlike Java — does not
+# enforce any relationship between a type's namespace, its file name, or its location on disk.
+dotnet_diagnostic.IDE0130.severity = warning
+
+# File-scoped namespaces (namespace X; rather than namespace X { ... }): one less level of
+# indentation in every file.
+csharp_style_namespace_declarations = file_scoped:warning

@@ -1,0 +1,269 @@
+/*
+  Styling for the single page, following the wireframes: a light grey canvas, white cards with
+  hairline borders, and monospaced figures so columns of prices line up.
+*/
+
+:root {
+  --surface: #ffffff;
+  --canvas: #f4f4f5;
+  --ink: #18181b;
+  --ink-muted: #71717a;
+  --ink-faint: #a1a1aa;
+  --line: #e4e4e7;
+  --warning-bg: #fefce8;
+  --warning-line: #fde68a;
+  --warning-ink: #b45309;
+  --error-bg: #fef2f2;
+  --error-line: #fecaca;
+  --error-ink: #dc2626;
+  --radius: 12px;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 40px 24px 64px;
+}
+
+/* ---------------------------------------------------------------- header */
+
+.eyebrow {
+  /* Reserves its line while empty, so the heading does not shift when a result arrives. */
+  min-height: 15px;
+  margin: 0 0 6px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+}
+
+.page-header h1 {
+  margin: 0 0 28px;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+}
+
+/* ---------------------------------------------------------------- controls */
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.segmented {
+  display: inline-flex;
+  padding: 4px;
+  background: var(--line);
+  border-radius: 10px;
+}
+
+.segment {
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.segment-active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 12%);
+}
+
+.search-field {
+  position: relative;
+  flex: 1 1 260px;
+}
+
+.search-icon {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  color: var(--ink-faint);
+  font-size: 18px;
+}
+
+.search-field input {
+  width: 100%;
+  padding: 11px 14px 11px 34px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: inherit;
+  font-size: 15px;
+}
+
+.search-field input:focus-visible,
+.segment:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.button-primary,
+.button-secondary {
+  padding: 11px 20px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button-primary {
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.button-secondary {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.button-primary:disabled,
+.button-secondary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------- notices */
+
+.notice {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  border: 1px solid;
+  border-radius: var(--radius);
+  font-size: 14px;
+}
+
+.notice-warning {
+  border-color: var(--warning-line);
+  background: var(--warning-bg);
+  color: var(--warning-ink);
+}
+
+.notice-error {
+  border-color: var(--error-line);
+  background: var(--error-bg);
+  color: var(--error-ink);
+}
+
+.notice-detail {
+  color: inherit;
+  opacity: 0.85;
+}
+
+/* ---------------------------------------------------------------- table */
+
+.card {
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.summary-table th {
+  padding: 14px 20px;
+  background: #fafafa;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.summary-table td {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.summary-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.summary-table .numeric {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.summary-table .day {
+  font-family: var(--mono);
+  color: var(--ink-muted);
+}
+
+/* ---------------------------------------------------------------- sortable headers */
+
+.summary-table th {
+  padding: 0;
+}
+
+.sort-button {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+  padding: 14px 20px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.summary-table th.numeric .sort-button {
+  justify-content: flex-end;
+}
+
+.sort-button:hover {
+  color: var(--ink);
+}
+
+.sort-active {
+  color: var(--ink);
+}
+
+/* Dimmed until a column is the active one, so the table does not read as four arrows. */
+.sort-arrow {
+  color: var(--ink-faint);
+  font-size: 10px;
+}
+
+.sort-active .sort-arrow {
+  color: var(--ink);
+}
