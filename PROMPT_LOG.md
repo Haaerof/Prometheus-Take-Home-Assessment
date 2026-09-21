@@ -389,6 +389,45 @@ Changed: edited README by hand
 
 ---
 
+## 12. Injection safety
+
+**Prompt**
+
+> Is the search code protected against javascript injections
+
+**What the AI produced**
+
+Four independent layers were checked rather than assumed:
+
+1. **Allowlist validation.** `Symbol` accepts only ASCII letters, digits and `. - ^ =`, up to 20
+   characters, so anything else is rejected with a 400 before it reaches the data source or the
+   response. An allowlist cannot be outgrown by a payload nobody anticipated, unlike a denylist.
+2. **No escape hatches in the frontend.** The codebase contains no `dangerouslySetInnerHTML`,
+   `innerHTML`, `eval`, `new Function`, `document.write` or `insertAdjacentHTML`. Those are the only
+   ways to bypass React's automatic escaping, so every value reaching the DOM is escaped.
+3. **Failures are `application/problem+json`.** A browser parses them as data, never executing them,
+   even where input is echoed back.
+4. **The symbol is URL-encoded in transit**, and the rounding value goes through `searchParams`.
+
+Payloads were sent rather than reasoned about: `<img src=x onerror=alert(1)>` and
+`javascript:alert(1)` both returned `400 INVALID_SYMBOL`, and `<script>alert(1)</script>` was
+rejected at routing because of its encoded slash.
+
+One habit flagged as hardening rather than a hole: the API echoes raw input back in the error
+`detail`. That is safe for this client, but any future consumer rendering it as HTML would inherit
+the risk. Capping its length would remove the concern.
+
+**Why I sent this prompt**
+
+Review search security against a basic javascript injection test done by the AI.
+
+**What I kept, changed, or rejected**
+
+Accepted: the review's conclusion that the search path is protected.
+
+
+---
+
 ## Manual changes made outside of AI
 
 **The user interface was designed by me, not by the AI.** The three wireframes in
