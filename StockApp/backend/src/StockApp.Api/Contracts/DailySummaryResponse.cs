@@ -22,11 +22,22 @@ public sealed record DailySummaryResponse(
     [property: JsonPropertyName("highAverage")] decimal HighAverage,
     [property: JsonPropertyName("volume")] long Volume)
 {
-    /// <summary>Projects a domain summary onto the published contract.</summary>
-    public static DailySummaryResponse From(DailySummary summary)
+    /// <summary>
+    /// Projects a domain summary onto the published contract, reduced to the requested precision.
+    /// </summary>
+    /// <remarks>
+    /// Reducing here rather than only at serialisation is what lets a caller choose a strategy per
+    /// request. The serializer formats to the same number of places afterwards, which leaves an
+    /// already-reduced value untouched.
+    /// </remarks>
+    public static DailySummaryResponse From(DailySummary summary, int decimalPlaces, MidpointRounding rounding)
     {
         ArgumentNullException.ThrowIfNull(summary);
 
-        return new DailySummaryResponse(summary.Day, summary.LowAverage, summary.HighAverage, summary.Volume);
+        return new DailySummaryResponse(
+            summary.Day,
+            Math.Round(summary.LowAverage, decimalPlaces, rounding),
+            Math.Round(summary.HighAverage, decimalPlaces, rounding),
+            summary.Volume);
     }
 }

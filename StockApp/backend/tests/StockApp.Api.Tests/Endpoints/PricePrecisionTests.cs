@@ -1,4 +1,7 @@
 using System.Globalization;
+using System.Net;
+using System.Text.Json;
+using StockApp.Api.Contracts;
 using StockApp.Api.Tests.TestDoubles;
 using StockApp.Core.MarketData.Models;
 
@@ -19,6 +22,11 @@ public class PricePrecisionTests
 
     /// <summary>An average whose fifth decimal forces every strategy to a different answer.</summary>
     private const decimal Awkward = 345.22059983m;
+
+    private static IntradaySeries SeriesWith(decimal low) =>
+        new(Symbol.Create("TSLA"),
+            ExchangeTimeZone.Resolved(NewYork, TimeZoneInfo.FindSystemTimeZoneById(NewYork)),
+            [new IntradayBar(DateTimeOffset.Parse("2026-09-14T14:30:00Z", CultureInfo.InvariantCulture), low, 1m, 1L)]);
 
     [Fact]
     public async Task ByDefault_PricesAreRoundedAwayFromZeroToFourPlaces()
@@ -82,20 +90,87 @@ public class PricePrecisionTests
         await Assert.ThrowsAnyAsync<Exception>(() => GetBodyAsync(configuration));
     }
 
+    /// <summary>
+    /// The UI offers the choice per search, so the strategy travels on the request. It overrides the
+    /// configured default rather than replacing it.
+    /// </summary>
+    [Theory]
+    [InlineData("ToZero", "345.2205")]
+    [InlineData("tozero", "345.2205")]
+    [InlineData("AwayFromZero", "345.2206")]
+    [InlineData("ToEven", "345.2206")]
+    public async Task ACallerCanChooseTheStrategyPerRequest(string requested, string expected)
+    {
+        var body = await GetBodyAsync(configuration: null, query: $"?rounding={requested}");
+
+        Assert.Contains($"\"lowAverage\":{expected}", body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ARequestedStrategy_OverridesTheConfiguredDefault()
+    {
+        var configuration = new Dictionary<string, string?>
+        {
+            ["PricePrecision:Rounding"] = nameof(MidpointRounding.ToZero)
+        };
+
+        var body = await GetBodyAsync(configuration, query: "?rounding=AwayFromZero");
+
+        Assert.Contains("\"lowAverage\":345.2206", body, StringComparison.Ordinal);
+    }
+
+    /// <summary>An unknown strategy is refused by name rather than quietly falling back to a default.</summary>
+    [Theory]
+    [InlineData("Sideways")]
+    [InlineData("3")]
+    public async Task AnUnknownStrategy_IsRejected(string requested)
+    {
+        using var api = CreateApi();
+
+        var response = await api.Client.GetAsync(
+            new Uri($"/api/v1/stocks/TSLA/daily?rounding={requested}", UriKind.Relative),
+            TestContext.Current.CancellationToken);
+
+        var problem = JsonDocument
+            .Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))
+            .RootElement;
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(ApiErrorCode.InvalidRounding, problem.GetProperty("errorCode").GetString());
+    }
+
     private static async Task<string> GetBodyAsync(
         IReadOnlyDictionary<string, string?>? configuration,
-        decimal low = Awkward)
+        decimal low = Awkward,
+        string query = "")
     {
-        var series = new IntradaySeries(
-            Symbol.Create("TSLA"),
-            ExchangeTimeZone.Resolved(NewYork, TimeZoneInfo.FindSystemTimeZoneById(NewYork)),
-            [new IntradayBar(DateTimeOffset.Parse("2026-09-14T14:30:00Z", CultureInfo.InvariantCulture), low, 1m, 1L)]);
-
-        using var factory = new StockApiFactory(new StubIntradayDataProvider(series), configuration);
+        using var factory = new StockApiFactory(new StubIntradayDataProvider(SeriesWith(low)), configuration);
         using var client = factory.CreateClient();
 
         return await client.GetStringAsync(
-            new Uri("/api/v1/stocks/TSLA/daily", UriKind.Relative),
+            new Uri($"/api/v1/stocks/TSLA/daily{query}", UriKind.Relative),
             TestContext.Current.CancellationToken);
+    }
+
+    private static StockApiFactoryScope CreateApi() => new(SeriesWith(Awkward));
+
+    /// <summary>Owns an in-memory host and a client pointed at it for a single test.</summary>
+    private sealed class StockApiFactoryScope : IDisposable
+    {
+        private readonly StockApiFactory _factory;
+
+        public StockApiFactoryScope(IntradaySeries series)
+        {
+            _factory = new StockApiFactory(new StubIntradayDataProvider(series));
+            Client = _factory.CreateClient();
+        }
+
+        public HttpClient Client { get; }
+
+        public void Dispose()
+        {
+            Client.Dispose();
+            _factory.Dispose();
+        }
     }
 }

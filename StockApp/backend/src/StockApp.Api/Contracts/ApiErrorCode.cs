@@ -14,6 +14,9 @@ public static class ApiErrorCode
     /// <summary>The requested symbol is not a well-formed ticker. The caller should correct it.</summary>
     public const string InvalidSymbol = "INVALID_SYMBOL";
 
+    /// <summary>The requested rounding strategy is not one this API supports.</summary>
+    public const string InvalidRounding = "INVALID_ROUNDING";
+
     /// <summary>The symbol is well formed but the data source has no such instrument.</summary>
     public const string SymbolNotFound = "SYMBOL_NOT_FOUND";
 
